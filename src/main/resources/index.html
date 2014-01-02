@@ -1,0 +1,147 @@
+<html>
+<head>
+    <title>ZooMap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        .item {
+            font-family: "Courier New";
+        }
+        .cont_tree {
+            border: solid 1px #a5b6c6;
+            margin-bottom: 5px;
+        }
+
+    </style>
+</head>
+<body>
+<script type="text/javascript">
+    var socket;
+    if (!window.WebSocket) {
+        window.WebSocket = window.MozWebSocket;
+    }
+    if (window.WebSocket) {
+        socket = new WebSocket("${wsLoc}");
+        socket.onmessage = received;
+        socket.onopen = function (event) {
+            $("#status").html("<span class='label label-success'><span class='glyphicon glyphicon-ok'></span></span>")
+            send("{\"r\":\"i\"");
+        };
+        socket.onclose = function (event) {
+            $("#status").html("<span class='label label-danger'><span class='glyphicon glyphicon-flash'></span></span>")
+        };
+    } else {
+        alert("Your browser does not support Web Socket.");
+    }
+
+    function send(message) {
+        if (!window.WebSocket) {
+            return;
+        }
+        if (socket.readyState == WebSocket.OPEN) {
+            socket.send(message);
+        } else {
+            alert("The socket is not open.");
+        }
+    }
+
+    function received(event) {
+        var evenData = event.data;
+        try {
+            var msg = JSON.parse(evenData);
+        } catch (e) {
+            evenData = "Error parsing " + evenData;
+            return;
+        }
+        
+        var ta = $("#responseLog");
+        ta.html(evenData + '\n' + ta.html());
+
+        try {
+            $("#tree_empty_default").remove();
+            var optype = msg.type;
+            var znode = msg.znode;
+            var znode_us = znode.replace(/\//g, "-");
+            var elContZnode = "cont_" + znode_us; 
+            var elInfoZnode = "info_" + znode_us; 
+
+            if (optype === "D") {
+                if ($("#" + elContZnode).length != 0) {
+                    var remove_node = function() {
+                        var nodeCont = $("#" + elInfoZnode);
+                        nodeCont.stop();
+                        nodeCont.css({backgroundColor:'#e00000'});
+                        nodeCont.animate({backgroundColor:'grey', color:'grey'},8*1000, 
+                                function() {
+                                    nodeCont.slideUp(250);
+                                    nodeCont.delay(250);
+                                    nodeCont.remove();
+                                }
+                        );
+                    }
+                    remove_node();
+                }
+                return;
+            }
+            // optype === "U" || optype === "C"
+            
+            var infoHtml = "<div class='item' id='" + elInfoZnode + "'>" + znode + "</div>";
+            
+            var isNew = optype === "C";
+            var append_to = function () {
+                $(infoHtml).hide().appendTo(("#" + elContZnode)).slideDown(isNew ? 250 : 0).fadeIn(isNew ? 1000 : 0);
+                if (isNew) {
+                    $("#" + elInfoZnode).css({backgroundColor:'#00ff00'});
+                    $("#" + elInfoZnode).animate({backgroundColor:'grey'},60*1000);
+                }
+            };
+            
+            if ($("#" + elContZnode).length == 0) {
+                var contHtml = "<div id='" + elContZnode + "'></div>";
+                if ($("#zktree").children().length == 0) $("#zktree").html(contHtml);
+                $("#zktree").children().each(function(i) {
+                    var elId = $(this).attr('id');
+                    if (elId > elContZnode) {
+                        $(this).before(contHtml);
+                        append_to();
+                        return false;
+                    } 
+                });                
+                if ($("#" + elContZnode).length == 0) {
+                    $("#zktree").append(contHtml);
+                    append_to();
+                }
+            } else {
+                $("#" + elContZnode).empty();
+                append_to();
+            }
+            
+        } catch (e) {
+            alert("error displaying znode: " + e);
+        }
+    }
+    
+</script>
+
+<div class="container">
+    <div id="status">
+        <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
+    </div>
+    <form onsubmit="return false;">
+        <input type="text" name="message" value="Hello, World!"/>
+        <input type="button" value="Query Znode Update" onclick="send(this.form.message.value)"/>
+        <h5>Incoming Log</h5>
+        <textarea id="responseLog" style="width:500px;height:300px; font-size: 12px"></textarea>
+    </form>
+    <div id="zktree" class="cont_tree">
+        <div id="tree_empty_default">No entries.</div>
+    </div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+</body>
+</html>
+
