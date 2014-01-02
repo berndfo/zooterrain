@@ -15,14 +15,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    
     <groupId>com.brainlounge.zooterrain</groupId>
     <artifactId>zooterrain-app</artifactId>
     <packaging>jar</packaging>
     <version>0.0.1-SNAPSHOT</version>
+    
+    <developers>
+        <developer>
+            <name>Bernd Fondermann</name>
+            <email>bernd@brainlounge.de</email>
+        </developer>
+    </developers>
+    
     <properties>
         <org.slf4j.version>1.7.5</org.slf4j.version>
         <netty.version>4.0.14.Beta1</netty.version>
     </properties>
+    
     <repositories>
     </repositories>
     <dependencies>
