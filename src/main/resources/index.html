@@ -13,17 +13,40 @@
 -->
 <html>
 <head>
-    <title>ZooMap</title>
+    <title>ZooTerrain</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
     <style type="text/css">
+        html, body {
+          background-color: #eee;
+        }
+        body {
+          padding-top: 40px;
+        }
+        .container > footer p {
+          text-align: center;
+        }
+        .container {
+          width: 820px;  
+        }
+  
+        .content {
+          background-color: #fff;
+          padding: 20px;
+          margin: 0 -20px; 
+          -webkit-border-radius: 0 0 6px 6px;
+             -moz-border-radius: 0 0 6px 6px;
+                  border-radius: 0 0 6px 6px;
+          -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+             -moz-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+                  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+        }
+        
         .item {
             font-family: "Courier New";
         }
         .cont_tree {
-            border: solid 1px #a5b6c6;
-            margin-bottom: 5px;
         }
 
     </style>
@@ -97,9 +120,9 @@
                 }
                 return;
             }
-            // optype === "U" || optype === "C"
+            // remaining optypes: "U" || "C"
             
-            var infoHtml = "<div class='item' id='" + elInfoZnode + "'>" + znode + "</div>";
+            var infoHtml = "<td class='item' id='" + elInfoZnode + "'>" + znode + "</td>";
             
             var isNew = optype === "C";
             var append_to = function () {
@@ -111,7 +134,7 @@
             };
             
             if ($("#" + elContZnode).length == 0) {
-                var contHtml = "<div id='" + elContZnode + "'></div>";
+                var contHtml = "<tr id='" + elContZnode + "'></tr>";
                 if ($("#zktree").children().length == 0) $("#zktree").html(contHtml);
                 $("#zktree").children().each(function(i) {
                     var elId = $(this).attr('id');
@@ -138,18 +161,32 @@
 </script>
 
 <div class="container">
-    <div id="status">
-        <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
+    <div class="content">
+      <div class="page-header">
+        <h1>ZooTerrain <small>Insights into running ZooKeeper clusters</small></h1>
+      </div>
+      <div class="row">
+        <div class="span10">
+            <div class="well">
+                ZK Connection 
+                <span id="status">
+                    <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
+                </span>
+            </div>
+            <table id="zktree" class="table cont_tree">
+                <thead><td>znode</td></thead>
+                <tbody>
+                    <tr id="tree_empty_default"><td>No znode entries.</td></tr>
+                </tbody>
+            </table>
+            <h5>Incoming Log</h5>
+            <textarea id="responseLog" style="width:500px;height:300px; font-size: 10px"></textarea>
+        </div>
+      </div>
     </div>
-    <form onsubmit="return false;">
-        <input type="text" name="message" value="Hello, World!"/>
-        <input type="button" value="Query Znode Update" onclick="send(this.form.message.value)"/>
-        <h5>Incoming Log</h5>
-        <textarea id="responseLog" style="width:500px;height:300px; font-size: 12px"></textarea>
-    </form>
-    <div id="zktree" class="cont_tree">
-        <div id="tree_empty_default">No entries.</div>
-    </div>
+    <footer>
+      <p>&copy; brainlounge 2014</p>
+    </footer>
 </div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>

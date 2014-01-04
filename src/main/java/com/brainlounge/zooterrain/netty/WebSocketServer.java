@@ -89,6 +89,7 @@ public class WebSocketServer {
             System.err.println("please provide a zookeeper connection string in property 'zooterrain.conn'.");
             System.exit(-1);
         }
+        System.out.println("you specified a ZooKeeper at " + zookeeperConnection);
 
         new WebSocketServer(port, zookeeperConnection).run();
     }
