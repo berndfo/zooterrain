@@ -42,6 +42,10 @@ public class ZkStateObserver implements Watcher {
         this.zkConnection = zkConnection;
     }
 
+    public String getZkConnection() {
+        return zkConnection;
+    }
+
     public void addListener(ZkStateListener listener) {
         listeners.add(listener);
     }

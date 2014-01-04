@@ -15,6 +15,7 @@
  */
 package com.brainlounge.zooterrain.netty;
 
+import com.brainlounge.zooterrain.zkclient.ControlMessage;
 import com.brainlounge.zooterrain.zkclient.ZkStateObserver;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -137,6 +138,8 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
             logger.fine(String.format("%s received %s", ctx.channel(), request));
         }
         // TODO instead of taking any request as initial data request, parse it and handle
+        final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
+        ctx.channel().writeAndFlush(new TextWebSocketFrame(handshakeInfo.toJson()));
         try {
             zkStateObserver.initialData("/", 3);
         } catch (InterruptedException e) {

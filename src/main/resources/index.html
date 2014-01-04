@@ -48,6 +48,10 @@
         }
         .cont_tree {
         }
+        .cont_tree > tbody > tr > td {
+            font-size: 12px;
+            padding: 6px;
+        }
 
     </style>
 </head>
@@ -94,6 +98,22 @@
         var ta = $("#responseLog");
         ta.html(evenData + '\n' + ta.html());
 
+        var msgType = msg.type;
+        
+        if (msgType === "U" || msgType === "C" || msgType === "D") {
+            handle_znodeEvent(msg);
+        } else {
+            handle_controlEvent(msg);
+        }
+    }
+    
+    function handle_controlEvent(msg) {
+        if (msg.type === "H") {
+            $("#conn").html(msg.msg);
+        }
+    }
+    
+    function handle_znodeEvent(msg) {
         try {
             $("#tree_empty_default").remove();
             var optype = msg.type;
@@ -168,12 +188,12 @@
       <div class="row">
         <div class="span10">
             <div class="well">
-                ZK Connection 
+                ZK Connection <span id="conn"></span>  
                 <span id="status">
                     <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
                 </span>
             </div>
-            <table id="zktree" class="table cont_tree">
+            <table id="zktree" class="table table-hover cont_tree">
                 <thead><td>znode</td></thead>
                 <tbody>
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
