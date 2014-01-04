@@ -155,8 +155,8 @@
             
             if ($("#" + elContZnode).length == 0) {
                 var contHtml = "<tr id='" + elContZnode + "'></tr>";
-                if ($("#zktree").children().length == 0) $("#zktree").html(contHtml);
-                $("#zktree").children().each(function(i) {
+                if ($("#zktreebdy").children().length == 0) $("#zktreebdy").html(contHtml);
+                $("#zktreebdy").children().each(function(i) {
                     var elId = $(this).attr('id');
                     if (elId > elContZnode) {
                         $(this).before(contHtml);
@@ -165,7 +165,7 @@
                     } 
                 });                
                 if ($("#" + elContZnode).length == 0) {
-                    $("#zktree").append(contHtml);
+                    $("#zktreebdy").append(contHtml);
                     append_to();
                 }
             } else {
@@ -195,7 +195,7 @@
             </div>
             <table id="zktree" class="table table-hover cont_tree">
                 <thead><td>znode</td></thead>
-                <tbody>
+                <tbody id="zktreebdy">
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>
             </table>
