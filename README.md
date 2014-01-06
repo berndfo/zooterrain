@@ -3,7 +3,7 @@ zooterrain
 
 View ZooKeeper znode tree in a browser  
 
-zooterrain is a small server every current should be able to connect to.
+zooterrain is a small server every WebSocket-capable browser is able to connect to.
 It will display all the znodes from a running ZooKeeper ensemble.
 As znodes are deleted or new ones are created, this will be visualized in the browser.
 
