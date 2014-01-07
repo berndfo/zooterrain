@@ -166,19 +166,26 @@
             
             if ($("#" + elContZnode).length == 0) {
                 var contHtml = "<tr id='" + elContZnode + "'></tr>";
-                if ($("#zktreebdy").children().length == 0) $("#zktreebdy").html(contHtml);
-                $("#zktreebdy").children().each(function(i) {
-                    var elId = $(this).attr('id');
-                    if (elId > elContZnode) {
-                        $(this).before(contHtml);
-                        append_to();
-                        return false;
-                    } 
-                });                
-                if ($("#" + elContZnode).length == 0) {
-                    $("#zktreebdy").append(contHtml);
+                if ($("#zktreebdy").children().length == 0) {
+                    // insert first and only child
+                    $("#zktreebdy").html(contHtml);
                     append_to();
-                }
+                } else {
+                    $("#zktreebdy").children().each(function(i) {
+                        // insert before
+                        var elId = $(this).attr('id');
+                        if (elId > elContZnode) {
+                            $(this).before(contHtml);
+                            append_to();
+                            return false;
+                        }
+                    });
+                    if ($("#" + elContZnode).length == 0) {
+                        // insert as very last
+                        $("#zktreebdy").append(contHtml);
+                        append_to();
+                    }
+                }                
             } else {
                 $("#" + elContZnode).html(infoHtml).animate({backgroundColor:'#00ff00'},100).animate({backgroundColor:'grey'},100);
             }
