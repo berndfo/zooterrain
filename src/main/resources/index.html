@@ -195,6 +195,32 @@
         }
     }
     
+    function update_filter() {
+        var searchExpression = $("#searchexpr").val();
+        if (searchExpression.length  < 1) {
+            $("#zktreebdy").children().show();
+            return true;
+        }
+        $("#zktreebdy").children().each(function(i) {
+            var nodePath = $(this).find(".node_path").text();
+            if (!nodePath) return true;
+            var match = false;
+            try {
+                match = nodePath.toLowerCase().indexOf(searchExpression.toLowerCase()) > -1;
+            } catch (e) {
+                return true;
+            }
+            
+            if (match) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+            return true;
+        });
+        return true;
+    }
+    
 </script>
 
 <div class="container">
@@ -210,6 +236,16 @@
                     <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
                 </span>
             </div>
+
+            <div>
+                <div class="input-group">
+                    <input id="searchexpr" type="text" class="form-control" onkeyup="update_filter();">
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="button">Filter</button>
+                  </span>
+                </div>
+            </div>
+
             <table id="zktree" class="table table-hover cont_tree">
                 <thead><td>&nbsp;</td><td>znode</td><td>data length</td><td>data version</td></thead>
                 <tbody id="zktreebdy">
