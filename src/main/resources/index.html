@@ -125,7 +125,7 @@
             if (optype === "D") {
                 if ($("#" + elContZnode).length != 0) {
                     var remove_node = function() {
-                        var nodeCont = $("#" + elInfoZnode);
+                        var nodeCont = $("#" + elContZnode);
                         nodeCont.stop();
                         nodeCont.css({backgroundColor:'#e00000'});
                         nodeCont.animate({backgroundColor:'grey', color:'grey'},8*1000, 
@@ -142,14 +142,19 @@
             }
             // remaining optypes: "U" || "C"
             
-            var infoHtml = "<td class='item' id='" + elInfoZnode + "'>" + znode + "</td>";
+            var infoHtml = "";
+            infoHtml += "<td><span></span></td>";
+            infoHtml += "<td class='item' id='" + elInfoZnode + "'>" +
+                    "<span class='label " + (msg.eph ? "label-warning" : "label-primary") + "'>" 
+                    + (msg.eph ? "eph" : "per") + 
+                    "</span> <span>" + znode + "</span></td>";
             
             var isNew = optype === "C";
             var append_to = function () {
                 $(infoHtml).hide().appendTo(("#" + elContZnode)).slideDown(isNew ? 250 : 0).fadeIn(isNew ? 1000 : 0);
                 if (isNew) {
-                    $("#" + elInfoZnode).css({backgroundColor:'#00ff00'});
-                    $("#" + elInfoZnode).animate({backgroundColor:'grey'},60*1000);
+                    $("#" + elContZnode).css({backgroundColor:'#00ff00'});
+                    $("#" + elContZnode).animate({backgroundColor:'grey'},60*1000);
                 }
             };
             
@@ -194,7 +199,7 @@
                 </span>
             </div>
             <table id="zktree" class="table table-hover cont_tree">
-                <thead><td>znode</td></thead>
+                <thead><td>&nbsp;</td><td>znode</td></thead>
                 <tbody id="zktreebdy">
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>

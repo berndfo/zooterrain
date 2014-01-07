@@ -22,6 +22,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -105,8 +106,14 @@ public class ZkStateObserver implements Watcher {
         
         for (String child : currentChildNames) {
             final String childFQPath = subtree.equals("/") ? ("/" + child) : (subtree + "/" + child);
+            Stat childStat = null;
+            try {
+                childStat = zk.exists(childFQPath, false);
+            } catch (KeeperException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
             // TODO propagate only to context requesting the initial data
-            propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.U));
+            propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.U, childStat));
             initialData(childFQPath, depth - 1);
         }
     }
@@ -154,12 +161,20 @@ public class ZkStateObserver implements Watcher {
 
             for (String removedChild : removedChilds) {
                 final String childFQPath = eventPath.equals("/") ? ("/" + removedChild) : (eventPath + "/" + removedChild);
-                propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.D));
+                propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.D, null));
             }
 
             for (String newChild : newChilds) {
                 final String childFQPath = eventPath.equals("/") ? ("/" + newChild) : (eventPath + "/" + newChild);
-                propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.C));
+
+                Stat childStat = null;
+                try {
+                    childStat = zk.exists(childFQPath, false);
+                } catch (KeeperException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+                
+                propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.C, childStat));
                 zk.getChildren(childFQPath, true);
             }
         } finally {

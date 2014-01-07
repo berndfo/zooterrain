@@ -17,6 +17,8 @@
 */
 package com.brainlounge.zooterrain.zkclient;
 
+import org.apache.zookeeper.data.Stat;
+
 /**
  */
 public class ZNodeMessage {
@@ -24,18 +26,28 @@ public class ZNodeMessage {
 
     protected Type type;
     protected String fqZNodeName;
+    protected Stat stat;
 
-    public ZNodeMessage(String fqZNodeName, Type type) {
+    public ZNodeMessage(String fqZNodeName, Type type, Stat stat) {
         this.fqZNodeName = fqZNodeName;
         this.type = type;
+        this.stat = stat;
     }
 
     public String toJson() {
-        String json = new StringBuilder().
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.
                 append("{").
                 append("\"type\":").append(quoted(type.toString())).append(",").
-                append("\"znode\":").append(quoted(fqZNodeName)).
-                append("}").toString();
+                append("\"znode\":").append(quoted(fqZNodeName));
+        if (stat != null) {
+            stringBuilder.append(",");
+            stringBuilder.append("\"eph\":").append(stat.getEphemeralOwner() != 0).append(",");
+            stringBuilder.append("\"ct\":").append(stat.getCtime()).append(",");
+            stringBuilder.append("\"mt\":").append(stat.getMtime()).append(",");
+            stringBuilder.append("\"px\":").append(stat.getPzxid());
+        }
+        String json = stringBuilder.append("}").toString();
         return json;
     }
 
