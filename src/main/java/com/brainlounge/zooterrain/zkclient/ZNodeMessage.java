@@ -43,6 +43,8 @@ public class ZNodeMessage {
         if (stat != null) {
             stringBuilder.append(",");
             stringBuilder.append("\"eph\":").append(stat.getEphemeralOwner() != 0).append(",");
+            stringBuilder.append("\"dl\":").append(stat.getDataLength()).append(",");
+            stringBuilder.append("\"dv\":").append(stat.getVersion()).append(",");
             stringBuilder.append("\"ct\":").append(stat.getCtime()).append(",");
             stringBuilder.append("\"mt\":").append(stat.getMtime()).append(",");
             stringBuilder.append("\"px\":").append(stat.getPzxid());

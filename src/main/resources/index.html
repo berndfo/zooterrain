@@ -43,9 +43,6 @@
                   box-shadow: 0 1px 2px rgba(0,0,0,.15);
         }
         
-        .item {
-            font-family: "Courier New";
-        }
         .cont_tree {
         }
         .cont_tree > tbody > tr > td {
@@ -53,6 +50,12 @@
             padding: 6px;
         }
 
+        .node_path {
+            font-family: "Courier New";
+        }
+        .node_no {
+            margins:auto;
+        }
     </style>
 </head>
 <body>
@@ -135,7 +138,7 @@
                                     nodeCont.remove();
                                 }
                         );
-                    }
+                    };
                     remove_node();
                 }
                 return;
@@ -144,10 +147,13 @@
             
             var infoHtml = "";
             infoHtml += "<td><span></span></td>";
-            infoHtml += "<td class='item' id='" + elInfoZnode + "'>" +
+            infoHtml += "<td id='" + elInfoZnode + "'>" +
                     "<span class='label " + (msg.eph ? "label-warning" : "label-primary") + "'>" 
                     + (msg.eph ? "eph" : "per") + 
-                    "</span> <span>" + znode + "</span></td>";
+                    "</span> <span class='node_path'>" + znode + "</span></td>";
+            infoHtml += "<td align='center'>" + msg.dl + "</td>";
+            infoHtml += "<td align='center'>" + msg.dv + "</td>";
+            infoHtml += "<td align='center'>" + new Date(msg.ct) + "</td>";
             
             var isNew = optype === "C";
             var append_to = function () {
@@ -174,8 +180,7 @@
                     append_to();
                 }
             } else {
-                $("#" + elContZnode).empty();
-                append_to();
+                $("#" + elContZnode).html(infoHtml).animate({backgroundColor:'#00ff00'},100).animate({backgroundColor:'grey'},100);
             }
             
         } catch (e) {
@@ -199,7 +204,7 @@
                 </span>
             </div>
             <table id="zktree" class="table table-hover cont_tree">
-                <thead><td>&nbsp;</td><td>znode</td></thead>
+                <thead><td>&nbsp;</td><td>znode</td><td>data length</td><td>data version</td></thead>
                 <tbody id="zktreebdy">
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>

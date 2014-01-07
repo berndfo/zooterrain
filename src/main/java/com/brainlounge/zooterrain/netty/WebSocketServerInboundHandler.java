@@ -141,7 +141,7 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
         final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
         ctx.channel().writeAndFlush(new TextWebSocketFrame(handshakeInfo.toJson()));
         try {
-            zkStateObserver.initialData("/", 3);
+            zkStateObserver.initialData("/", 6);
         } catch (InterruptedException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }

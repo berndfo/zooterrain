@@ -108,7 +108,7 @@ public class ZkStateObserver implements Watcher {
             final String childFQPath = subtree.equals("/") ? ("/" + child) : (subtree + "/" + child);
             Stat childStat = null;
             try {
-                childStat = zk.exists(childFQPath, false);
+                childStat = zk.exists(childFQPath, true);
             } catch (KeeperException e) {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
@@ -133,6 +133,8 @@ public class ZkStateObserver implements Watcher {
                     //propagateToListeners(new ZNodeMessage(eventPath, ZNodeMessage.Type.D));
                     break;
                 case NodeDataChanged:
+                    handleDataChanged(eventPath);
+                    
                 case NodeChildrenChanged:
                     handleChildrenChanged(eventPath);
                     break;
@@ -140,6 +142,18 @@ public class ZkStateObserver implements Watcher {
         } catch (Exception e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
+    }
+
+    private void handleDataChanged(String eventPath) {
+        Stat stat = null;
+        try {
+            stat = zk.exists(eventPath, true);
+        } catch (KeeperException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        propagateToListeners(new ZNodeMessage(eventPath, ZNodeMessage.Type.U, stat));
     }
 
     private void handleChildrenChanged(String eventPath) throws InterruptedException, KeeperException {
@@ -169,7 +183,7 @@ public class ZkStateObserver implements Watcher {
 
                 Stat childStat = null;
                 try {
-                    childStat = zk.exists(childFQPath, false);
+                    childStat = zk.exists(childFQPath, true);
                 } catch (KeeperException e) {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
