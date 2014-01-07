@@ -153,7 +153,7 @@
                     "</span> <span class='node_path'>" + znode + "</span></td>";
             infoHtml += "<td align='center'>" + msg.dl + "</td>";
             infoHtml += "<td align='center'>" + msg.dv + "</td>";
-            infoHtml += "<td align='center'>" + new Date(msg.ct) + "</td>";
+            //infoHtml += "<td align='center'>" + new Date(msg.ct) + "</td>";
             
             var isNew = optype === "C";
             var append_to = function () {
@@ -216,8 +216,10 @@
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>
             </table>
-            <h5>Incoming Log</h5>
-            <textarea id="responseLog" style="width:500px;height:300px; font-size: 10px"></textarea>
+            <div style="display: none">
+                <h5>Incoming Message Log</h5>
+                <textarea id="responseLog" style="width:500px;height:300px; font-size: 10px"></textarea>
+            </div>
         </div>
       </div>
     </div>
