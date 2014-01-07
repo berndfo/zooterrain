@@ -50,7 +50,7 @@ import static io.netty.handler.codec.http.HttpVersion.*;
 public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<Object> {
     private static final Logger logger = Logger.getLogger(WebSocketServerInboundHandler.class.getName());
 
-    private static final String WEBSOCKET_PATH = "/websocket";
+    private static final String WEBSOCKET_PATH = "/firehose";
 
     protected WebSocketServerHandshaker handshaker;
     protected WebSocketServerIndexPage webSocketServerIndexPage;
