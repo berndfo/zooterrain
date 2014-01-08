@@ -29,6 +29,7 @@ public class OutboundConnector implements ZkStateListener {
 
     public OutboundConnector(ChannelHandlerContext context) {
         this.context = context;
+        System.out.println("context.hashCode() = " + context.hashCode());
     }
 
     @Override

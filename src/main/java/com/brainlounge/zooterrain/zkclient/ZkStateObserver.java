@@ -84,7 +84,7 @@ public class ZkStateObserver implements Watcher {
         }
     }
 
-    public void initialData(String subtree, int depth) throws InterruptedException {
+    public void initialData(String subtree, int depth, Set<ZkStateListener> receivers) throws InterruptedException {
         if (depth <= 0) return;
         if (subtree == null) subtree = "/";
 
@@ -112,9 +112,8 @@ public class ZkStateObserver implements Watcher {
             } catch (KeeperException e) {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
-            // TODO propagate only to context requesting the initial data
-            propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.U, childStat));
-            initialData(childFQPath, depth - 1);
+            propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.U, childStat), receivers);
+            initialData(childFQPath, depth - 1, receivers);
         }
     }
     
@@ -211,7 +210,11 @@ public class ZkStateObserver implements Watcher {
     }
 
     private void propagateToListeners(ZNodeMessage message) {
-        for (ZkStateListener listener : listeners) {
+        propagateToListeners(message, listeners);
+    }
+    
+    private void propagateToListeners(ZNodeMessage message, Set<ZkStateListener> stateListeners) {
+        for (ZkStateListener listener : stateListeners) {
             listener.zkNodeEvent(message);
         }
     }

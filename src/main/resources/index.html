@@ -69,7 +69,7 @@
         socket.onmessage = received;
         socket.onopen = function (event) {
             $("#status").html("<span class='label label-success'><span class='glyphicon glyphicon-ok'></span></span>")
-            send("{\"r\":\"i\"");
+            send("{\"r\":\"i\"}");
         };
         socket.onclose = function (event) {
             $("#status").html("<span class='label label-danger'><span class='glyphicon glyphicon-flash'></span></span>")

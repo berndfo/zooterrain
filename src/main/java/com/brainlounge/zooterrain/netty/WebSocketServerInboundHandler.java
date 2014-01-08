@@ -16,7 +16,9 @@
 package com.brainlounge.zooterrain.netty;
 
 import com.brainlounge.zooterrain.zkclient.ControlMessage;
+import com.brainlounge.zooterrain.zkclient.ZkStateListener;
 import com.brainlounge.zooterrain.zkclient.ZkStateObserver;
+import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -137,13 +139,24 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(String.format("%s received %s", ctx.channel(), request));
         }
-        // TODO instead of taking any request as initial data request, parse it and handle
-        final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
-        ctx.channel().writeAndFlush(new TextWebSocketFrame(handshakeInfo.toJson()));
-        try {
-            zkStateObserver.initialData("/", 6);
-        } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        
+        // TODO parse request into JSON data structure, instead of comparing strings 
+        
+        if (request.equals("{\"r\":\"i\"}")) {
+            // client requested initial data
+            
+            // sending connection string info
+            final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
+            ctx.channel().writeAndFlush(new TextWebSocketFrame(handshakeInfo.toJson()));
+
+            // sending initial znodes
+            try {
+                zkStateObserver.initialData("/", 6, Sets.<ZkStateListener>newHashSet(new OutboundConnector(ctx)));
+            } catch (InterruptedException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        } else {
+            System.out.println("unknown, unhandled client request = " + request);
         }
     }
 
