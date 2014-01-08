@@ -22,10 +22,15 @@ ZooKeeper instance you want to track, which typically looks much like this:
 
 and then start the application the by running
 
-    java -cp target/zooterrain-full.jar -Dzooterrain.conn=${ZOOKEEPER_HOST_PORT} com.brainlounge.zooterrain.netty.WebSocketServer 9080  
+    java -cp target/zooterrain-full.jar -Dzooterrain.conn=${ZOOKEEPER_HOST_PORT} com.brainlounge.zooterrain.netty.WebSocketServer 8080
 
-(replacing ${ZOOKEEPER_HOST_PORT} with your ZooKeeper address).
+Be sure to always replace ${ZOOKEEPER_HOST_PORT} with your ZooKeeper address.
+or simply:
 
-Open a browser and navigate to http://localhost:9080/
-You can run the server on other ports by changing the last parameter (here: 9080) in the java command line.
+    java -Dzooterrain.conn=${ZOOKEEPER_HOST_PORT} -jar target/zooterrain-full.jar 
+
+## Connecting from Browser    
+    
+Open a browser and navigate to http://localhost:8080/
+You can run the server on other ports by changing the last parameter (here: 8080) in the java command line.
 
