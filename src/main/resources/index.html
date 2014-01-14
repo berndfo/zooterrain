@@ -121,7 +121,7 @@
             $("#tree_empty_default").remove();
             var optype = msg.type;
             var znode = msg.znode;
-            var znode_us = znode.replace(/[\/\:\.]/g, "-");
+            var znode_us = znode.replace(/[\/\:\.\@\$\{\}\[\]\(\)]/g, "-");
             var elContZnode = "cont_" + znode_us; 
             var elInfoZnode = "info_" + znode_us; 
 
