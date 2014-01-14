@@ -99,7 +99,8 @@ public class ZkStateObserver implements Watcher {
             }
             zNodeState.setChildren(currentChildNames);
         } catch (KeeperException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            // znode has gone away
+            znodeStateCache.remove(subtree);
         } finally {
             zNodeState.release();
         }
