@@ -61,6 +61,11 @@
 <body>
 <script type="text/javascript">
     var socket;
+    
+    var watched = [];
+    var ignored = [];
+    var currentlyHovered = null;
+    
     if (!window.WebSocket) {
         window.WebSocket = window.MozWebSocket;
     }
@@ -73,11 +78,16 @@
         };
         socket.onclose = function (event) {
             $("#status").html("<span class='label label-danger'><span class='glyphicon glyphicon-flash'></span></span>")
+            showAlert("Connection to ZooTerrain server lost.");
         };
     } else {
         alert("Your browser does not support Web Socket.");
     }
-
+    
+    function showAlert(text) {
+        $("<div class='alert alert-warning alert-dismissable'>" + text + "</div>").appendTo("#alert_cont").delay(1000).fadeOut(750);
+    }
+    
     function send(message) {
         if (!window.WebSocket) {
             return;
@@ -115,6 +125,64 @@
             $("#conn").html(msg.msg);
         }
     }
+
+    function znodeHoverIn(znode) {
+        $("#ctxtmenu").detach().appendTo("#info_" + znode + " > .node_path");
+        currentlyHovered = znode; 
+        return true;
+    }
+    
+    function znodeHoverOut(znode) {
+        currentlyHovered = null;
+        $("#ctxtmenu").detach().appendTo("#moon");
+        return true;
+    }
+    
+    function toggleWatched() {
+        var hovered = currentlyHovered;
+        if (!hovered) return;
+        if (isWatched(hovered)) {
+            watched.splice(watched.indexOf(hovered),1);
+        } else {
+            watched.push(hovered);
+        }
+    }
+    
+    function toggleIgnored() {
+        var hovered = currentlyHovered;
+        if (!hovered) return;
+        $("#ctxtmenu").detach().appendTo("#moon");
+        ignored.push(hovered);
+
+        var hoveredCont = "cont_" + hovered;
+        $("#zktreebdy").children().each(function(i) {
+            var cont_id = $(this).attr("id");
+            if (cont_id && cont_id.indexOf(hoveredCont) == 0) {
+                $("#" + cont_id).remove();
+            }
+            return true;
+        });    
+    }
+
+    function isIgnored(elContZnode) {
+        for (var i = 0; i < ignored.length; i++) {
+            var ignoredZnode = ignored[i];
+            if (elContZnode.indexOf(ignoredZnode) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function isWatched(elContZnode) {
+        for (var i = 0; i < watched.length; i++) {
+            var watchedZnode = watched[i];
+            if (elContZnode.indexOf(watchedZnode) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     function handle_znodeEvent(msg) {
         try {
@@ -144,7 +212,12 @@
                 return;
             }
             // remaining optypes: "U" || "C"
-            
+
+            if (isIgnored(znode_us)) return;
+            if (isWatched(znode_us)) {
+                showAlert("node has been updated: " + znode);
+            }
+                       
             var infoHtml = "";
             infoHtml += "<td><span></span></td>";
             infoHtml += "<td id='" + elInfoZnode + "'>" +
@@ -159,13 +232,15 @@
             var append_to = function () {
                 $(infoHtml).hide().appendTo(("#" + elContZnode)).slideDown(isNew ? 250 : 0).fadeIn(isNew ? 1000 : 0);
                 if (isNew) {
-                    $("#" + elContZnode).css({backgroundColor:'#00ff00'});
-                    $("#" + elContZnode).animate({backgroundColor:'grey'},60*1000);
+                    var newCont = $("#" + elContZnode);
+                    newCont.css({backgroundColor:'#00ff00'});
+                    newCont.animate({backgroundColor:'grey'},60*1000);
                 }
             };
             
             if ($("#" + elContZnode).length == 0) {
-                var contHtml = "<tr id='" + elContZnode + "'></tr>";
+                var znodeParam = "\"" + znode_us + "\"";
+                var contHtml = "<tr id='" + elContZnode + "' onmouseenter='znodeHoverIn("+znodeParam+");' onmouseleave='znodeHoverOut("+znodeParam+");'></tr>";
                 if ($("#zktreebdy").children().length == 0) {
                     // insert first and only child
                     $("#zktreebdy").html(contHtml);
@@ -237,6 +312,9 @@
                 </span>
             </div>
 
+            <div id="alert_cont">
+            </div>
+            
             <div>
                 <div class="input-group">
                     <input id="searchexpr" type="text" class="form-control" placeholder="filter expression" onkeyup="update_filter();">
@@ -258,6 +336,16 @@
             </div>
         </div>
       </div>
+    </div>
+    <div id="moon" style="display: none;">
+        <div id="ctxtmenu" >
+            <button id="btn_watch" type="button" class="btn btn-default btn-xs" onclick="toggleWatched();">
+                <span class="glyphicon glyphicon-star"></span> Watch
+            </button>
+            <button id="btn_ignore" type="button" class="btn btn-default btn-xs" onclick="toggleIgnored();">
+                <span class="glyphicon glyphicon-remove-circle"></span> Ignore
+            </button>
+        </div>
     </div>
     <footer>
       <p>&copy; brainlounge 2014</p>
