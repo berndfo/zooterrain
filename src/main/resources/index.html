@@ -17,6 +17,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/start/jquery-ui.min.css" rel="stylesheet">
     <style type="text/css">
         html, body {
           background-color: #eee;
@@ -50,11 +51,28 @@
             padding: 6px;
         }
 
+        #data_dump {
+            font-size: 12px;
+        } 
         .node_path {
-            font-family: "Courier New";
+            font-family: sans-serif;
         }
         .node_no {
             margins:auto;
+        }
+        .hexLineNo {
+            font-family: fixedsys;
+            color: green;
+        }
+        .hexChars {
+            font-family: fixedsys;
+            font-weight: normal;
+            color: #daa520;
+        }
+        .hexHex {
+            font-family: fixedsys;
+            font-weight: bold;
+            color: #00008b;
         }
     </style>
 </head>
@@ -82,6 +100,12 @@
         };
     } else {
         alert("Your browser does not support Web Socket.");
+    }
+
+    function updateTreeCount() {
+        var childCount = $("#zktreebdy").children().length;
+        $("#treecount").html(childCount);
+        setTimeout(updateTreeCount, 1000);
     }
     
     function showAlert(text) {
@@ -115,6 +139,8 @@
         
         if (msgType === "U" || msgType === "C" || msgType === "D") {
             handle_znodeEvent(msg);
+        } else if (msgType === "B") {
+            handle_dataEvent(msg);
         } else {
             handle_controlEvent(msg);
         }
@@ -127,7 +153,7 @@
     }
 
     function znodeHoverIn(znode) {
-        $("#ctxtmenu").detach().appendTo("#info_" + znode + " > .node_path");
+        $("#ctxtmenu").detach().appendTo("#info_" + znode + " > .node_ctxt");
         currentlyHovered = znode; 
         return true;
     }
@@ -163,6 +189,13 @@
             return true;
         });    
     }
+    function showNodeData() {
+        var hovered = currentlyHovered;
+        if (!hovered) return;
+        $("#ctxtmenu").detach().appendTo("#moon");
+        var znodePath = $("#info_" + hovered + " > .node_path").text();
+        send("{\"r\":\"b\", \"z\":\""+znodePath+"\"}");
+    }
 
     function isIgnored(elContZnode) {
         for (var i = 0; i < ignored.length; i++) {
@@ -184,6 +217,70 @@
         return false;
     }
     
+    function handle_dataEvent(msg) {
+        var data = msg.data;
+        var znode = msg.znode;
+        var version = msg.version;
+        if (!data) data = "";
+        else data = base64Decode(data);
+        new Hexdump(data, {
+                container: 'data_dump'
+                , base: 'hex'
+                , width: 8
+                , ascii: false
+                , byteGrouping: 2
+                , html: true
+                , lineNumber: true
+                , style: {
+                    lineNumberLeft: "<div><span class='hexLineNo'>"
+                  , lineNumberRight: ':</span>'
+                  , stringLeft: "<span class='hexChars'>"
+                  , stringRight: "</span></div>"
+                  , hexLeft: "<span class='hexHex'>"
+                  , hexRight: "</span>"
+                  , hexNull: '.g'
+                  , stringNull: '.'
+                }
+              });
+        $("#data_dump").dialog({
+            modal: true,
+            buttons: {
+                Ok: function () {
+                    $(this).dialog("close");
+                }
+            },
+            width: "420px",
+            title: (znode + " (version " + version + ")")
+        });
+    }
+
+    var keyString = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    
+    function base64Decode(input) {
+        var output = "";
+        var chr1, chr2, chr3;
+        var enc1, enc2, enc3, enc4;
+        var i = 0;
+        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+        while (i < input.length) {
+            enc1 = keyString.indexOf(input.charAt(i++));
+            enc2 = keyString.indexOf(input.charAt(i++));
+            enc3 = keyString.indexOf(input.charAt(i++));
+            enc4 = keyString.indexOf(input.charAt(i++));
+            chr1 = (enc1 << 2) | (enc2 >> 4);
+            chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+            chr3 = ((enc3 & 3) << 6) | enc4;
+            output = output + String.fromCharCode(chr1);
+            if (enc3 != 64) {
+                output = output + String.fromCharCode(chr2);
+            }
+            if (enc4 != 64) {
+                output = output + String.fromCharCode(chr3);
+            }
+        }
+        return output;
+    }
+
     function handle_znodeEvent(msg) {
         try {
             $("#tree_empty_default").remove();
@@ -223,7 +320,7 @@
             infoHtml += "<td id='" + elInfoZnode + "'>" +
                     "<span class='label " + (msg.eph ? "label-warning" : "label-primary") + "'>" 
                     + (msg.eph ? "eph" : "per") + 
-                    "</span> <span class='node_path'>" + znode + "</span></td>";
+                    "</span> <span class='node_path'>" + znode + "</span><span class='node_ctxt'></span></td>";
             infoHtml += "<td align='center'>" + msg.dl + "</td>";
             infoHtml += "<td align='center'>" + msg.dv + "</td>";
             //infoHtml += "<td align='center'>" + new Date(msg.ct) + "</td>";
@@ -314,6 +411,8 @@
 
             <div id="alert_cont">
             </div>
+            <div id="data_dump">
+            </div>
             
             <div>
                 <div class="input-group">
@@ -325,7 +424,7 @@
             </div>
 
             <table id="zktree" class="table table-hover cont_tree">
-                <thead><td>&nbsp;</td><td>znode</td><td>data length</td><td>data version</td></thead>
+                <thead><td>&nbsp;</td><td>znode <span id='treecount' class='label label-primary'>?</span> </td><td>data length</td><td>data version</td></thead>
                 <tbody id="zktreebdy">
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>
@@ -345,6 +444,9 @@
             <button id="btn_ignore" type="button" class="btn btn-default btn-xs" onclick="toggleIgnored();">
                 <span class="glyphicon glyphicon-remove-circle"></span> Ignore
             </button>
+            <button id="btn_showdata" type="button" class="btn btn-default btn-xs" onclick="showNodeData();">
+                <span class="glyphicon glyphicon-list-alt"></span> Show Data
+            </button>
         </div>
     </div>
     <footer>
@@ -353,8 +455,12 @@
 </div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script type="text/javascript">    
+    $(document).ready(function(){updateTreeCount();});
+</script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+<script src="//raw2.github.com/mephux/hexdump.js/master/src/hexdump-min.js"></script>
 </body>
 </html>
 

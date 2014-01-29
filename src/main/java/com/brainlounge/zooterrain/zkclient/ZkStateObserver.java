@@ -84,7 +84,7 @@ public class ZkStateObserver implements Watcher {
         }
     }
 
-    public void initialData(String subtree, int depth, Set<ZkStateListener> receivers) throws InterruptedException {
+    public void initialTree(String subtree, int depth, Set<ZkStateListener> receivers) throws InterruptedException {
         if (depth <= 0) return;
         if (subtree == null) subtree = "/";
 
@@ -107,15 +107,32 @@ public class ZkStateObserver implements Watcher {
         
         for (String child : currentChildNames) {
             final String childFQPath = subtree.equals("/") ? ("/" + child) : (subtree + "/" + child);
-            Stat childStat = null;
+            Stat childStat;
             try {
                 childStat = zk.exists(childFQPath, true);
             } catch (KeeperException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
+                continue;
             }
             propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.U, childStat), receivers);
-            initialData(childFQPath, depth - 1, receivers);
+            initialTree(childFQPath, depth - 1, receivers);
         }
+    }
+
+    public DataMessage retrieveNodeData(String znode) {
+        Stat stat = new Stat();
+        try {
+            byte[] data = zk.getData(znode, true, stat);
+            if (data != null && data.length > 500) {
+                byte[] dataShortend = new byte[500];
+                System.arraycopy(data, 0, dataShortend, 0, 500);
+                data = dataShortend;
+            }
+            return new DataMessage(znode, data, stat);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
     
     @Override
@@ -163,7 +180,13 @@ public class ZkStateObserver implements Watcher {
             final Set<String> lastTimeChildren = zNodeState.getChildren();
             Set<String> newChildNames = new HashSet<String>();
 
-            final List<String> children = zk.getChildren(eventPath, true);
+            final List<String> children;
+            try {
+                children = zk.getChildren(eventPath, true);
+            } catch (KeeperException e) {
+                znodeStateCache.remove(eventPath);
+                return;
+            }
 
             for (String child : children) {
                 newChildNames.add(child);
@@ -181,11 +204,11 @@ public class ZkStateObserver implements Watcher {
             for (String newChild : newChilds) {
                 final String childFQPath = eventPath.equals("/") ? ("/" + newChild) : (eventPath + "/" + newChild);
 
-                Stat childStat = null;
+                Stat childStat;
                 try {
                     childStat = zk.exists(childFQPath, true);
                 } catch (KeeperException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    continue;
                 }
                 
                 propagateToListeners(new ZNodeMessage(childFQPath, ZNodeMessage.Type.C, childStat));

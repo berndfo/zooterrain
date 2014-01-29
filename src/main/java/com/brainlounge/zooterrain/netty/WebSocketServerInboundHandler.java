@@ -15,9 +15,16 @@
  */
 package com.brainlounge.zooterrain.netty;
 
+import com.brainlounge.zooterrain.zkclient.ClientMessage;
+import com.brainlounge.zooterrain.zkclient.ClientRequest;
 import com.brainlounge.zooterrain.zkclient.ControlMessage;
+import com.brainlounge.zooterrain.zkclient.DataMessage;
 import com.brainlounge.zooterrain.zkclient.ZkStateListener;
 import com.brainlounge.zooterrain.zkclient.ZkStateObserver;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -57,6 +64,8 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
     protected WebSocketServerHandshaker handshaker;
     protected WebSocketServerIndexPage webSocketServerIndexPage;
     protected ZkStateObserver zkStateObserver;
+    
+    protected ObjectMapper jsonMapper = new ObjectMapper();
 
     public WebSocketServerInboundHandler(ZkStateObserver zkStateObserver) {
         this.zkStateObserver = zkStateObserver;
@@ -134,30 +143,56 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
                     .getName()));
         }
 
-        // Send the uppercase string back.
         String request = ((TextWebSocketFrame) frame).text();
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(String.format("%s received %s", ctx.channel(), request));
         }
         
-        // TODO parse request into JSON data structure, instead of comparing strings 
-        
-        if (request.equals("{\"r\":\"i\"}")) {
+        // expecting JSON, parse now
+        TreeNode jsonRequest;
+        ClientRequest.Type requestType;
+        try {
+            final JsonParser parser = jsonMapper.getFactory().createParser(request);
+            jsonRequest = parser.readValueAsTree();
+            TextNode type = (TextNode)jsonRequest.get("r");
+            requestType = ClientRequest.Type.valueOf(type.textValue());
+        } catch (Exception e) {
+            logger.info("parsing JSON failed for '" + request + "'");
+            // TODO return error to client
+            return;
+        }
+
+        if (requestType == ClientRequest.Type.i) {
             // client requested initial data
             
             // sending connection string info
             final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
-            ctx.channel().writeAndFlush(new TextWebSocketFrame(handshakeInfo.toJson()));
+            writeClientMessage(ctx, handshakeInfo);
 
             // sending initial znodes
             try {
-                zkStateObserver.initialData("/", 6, Sets.<ZkStateListener>newHashSet(new OutboundConnector(ctx)));
+                zkStateObserver.initialTree("/", 6, Sets.<ZkStateListener>newHashSet(new OutboundConnector(ctx)));
             } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
+            }
+        } else if (requestType == ClientRequest.Type.b) {
+            final String znode;
+            try {
+                znode = ((TextNode)jsonRequest.get("z")).textValue();
+            } catch (Exception e) {
+                return; // TODO return error
+            }
+            final DataMessage dataMessage = zkStateObserver.retrieveNodeData(znode);
+            if (dataMessage != null) {
+                writeClientMessage(ctx, dataMessage);
             }
         } else {
             System.out.println("unknown, unhandled client request = " + request);
         }
+    }
+
+    protected void writeClientMessage(ChannelHandlerContext ctx, ClientMessage clientMessage) {
+        ctx.channel().writeAndFlush(new TextWebSocketFrame(clientMessage.toJson()));
     }
 
     private static void sendHttpResponse(

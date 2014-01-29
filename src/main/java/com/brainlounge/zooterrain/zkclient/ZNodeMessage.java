@@ -21,7 +21,7 @@ import org.apache.zookeeper.data.Stat;
 
 /**
  */
-public class ZNodeMessage {
+public class ZNodeMessage extends ClientMessage {
     public static enum Type { C, U, D }
 
     protected Type type;
@@ -34,6 +34,7 @@ public class ZNodeMessage {
         this.stat = stat;
     }
 
+    @Override
     public String toJson() {
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.
@@ -53,7 +54,4 @@ public class ZNodeMessage {
         return json;
     }
 
-    protected String quoted(String notQuoted) {
-        return "\"" + notQuoted + "\""; 
-    }
 }

@@ -19,7 +19,7 @@ package com.brainlounge.zooterrain.zkclient;
 
 /**
  */
-public class ControlMessage {
+public class ControlMessage extends ClientMessage {
     public static enum Type { H, I }
 
     protected Type type;
@@ -30,6 +30,7 @@ public class ControlMessage {
         this.type = type;
     }
 
+    @Override
     public String toJson() {
         String json = new StringBuilder().
                 append("{").
@@ -37,9 +38,5 @@ public class ControlMessage {
                 append("\"msg\":").append(quoted(message)).
                 append("}").toString();
         return json;
-    }
-
-    protected String quoted(String notQuoted) {
-        return "\"" + notQuoted + "\""; 
     }
 }
