@@ -7,6 +7,15 @@ zooterrain is a small server every WebSocket-capable browser is able to connect 
 It will display all the znodes from a running ZooKeeper ensemble.
 As znodes are deleted or new ones are created, this will be visualized in the browser.
 
+## Features
+
+1. Display changes to the tree as they happen (new, removed nodes)
+1. Display changes to the data of each node
+1. Filter nodes by name
+1. Ignore nodes (and their children)
+1. Watch nodes
+1. Display a node's attached data, also as a hex dump
+
 ## Building
 
 git clone the repository and run Maven
