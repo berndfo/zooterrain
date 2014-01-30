@@ -132,9 +132,6 @@
             return;
         }
         
-        var ta = $("#responseLog");
-        ta.html(evenData + '\n' + ta.html());
-
         var msgType = msg.type;
         
         if (msgType === "U" || msgType === "C" || msgType === "D") {
@@ -429,10 +426,6 @@
                     <tr id="tree_empty_default"><td>No znode entries.</td></tr>
                 </tbody>
             </table>
-            <div style="display: none">
-                <h5>Incoming Message Log</h5>
-                <textarea id="responseLog" style="width:500px;height:300px; font-size: 10px"></textarea>
-            </div>
         </div>
       </div>
     </div>
