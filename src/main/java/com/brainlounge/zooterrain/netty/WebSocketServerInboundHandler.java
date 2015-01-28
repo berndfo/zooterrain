@@ -62,7 +62,6 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
     private static final String WEBSOCKET_PATH = "/firehose";
 
     protected WebSocketServerHandshaker handshaker;
-    protected WebSocketServerIndexPage webSocketServerIndexPage;
     protected ZkStateObserver zkStateObserver;
     
     protected ObjectMapper jsonMapper = new ObjectMapper();
@@ -102,16 +101,15 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
             FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
             sendHttpResponse(ctx, req, res);
             return;
-        }
-        else if ("/".equals(req.getUri())) {
-            webSocketServerIndexPage = new WebSocketServerIndexPage();
+        } else if ("/hexdump.js".equals(req.getUri())) {
+            final WebSocketServerJSPage webSocketServerJSPage = new WebSocketServerJSPage();
+            ByteBuf content = webSocketServerJSPage.getContent(getWebSocketLocation(req));
+            sendHttpResponse(ctx, req, content, "text/javascript; charset=UTF-8");
+            return;
+        } else if ("/".equals(req.getUri())) {
+            WebSocketServerIndexPage webSocketServerIndexPage = new WebSocketServerIndexPage();
             ByteBuf content = webSocketServerIndexPage.getContent(getWebSocketLocation(req));
-            FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
-
-            res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
-            setContentLength(res, content.readableBytes());
-
-            sendHttpResponse(ctx, req, res);
+            sendHttpResponse(ctx, req, content, "text/html; charset=UTF-8");
             return;
         }
 
@@ -126,7 +124,16 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
             zkStateObserver.addListener(new OutboundConnector(ctx));
         }
     }
-    
+
+    private void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest req, ByteBuf content, String contentType) {
+        FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+
+        res.headers().set(CONTENT_TYPE, contentType);
+        setContentLength(res, content.readableBytes());
+
+        sendHttpResponse(ctx, req, res);
+    }
+
     private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {
 
         // Check for closing frame
