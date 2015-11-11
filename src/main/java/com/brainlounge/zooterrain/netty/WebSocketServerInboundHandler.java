@@ -43,15 +43,18 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
+import org.apache.zookeeper.CreateMode;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.*;
-import static io.netty.handler.codec.http.HttpMethod.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import static io.netty.handler.codec.http.HttpHeaders.isKeepAlive;
+import static io.netty.handler.codec.http.HttpHeaders.setContentLength;
+import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * Handles handshakes and messages
@@ -119,10 +122,17 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
         handshaker = wsFactory.newHandshaker(req);
         if (handshaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
-        } else {
+            return;
+        } 
+        
+        try {
             handshaker.handshake(ctx.channel(), req);
-            zkStateObserver.addListener(new OutboundConnector(ctx));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "websocket handshake failed", e);
+            WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
+            return;
         }
+        zkStateObserver.addListener(new OutboundConnector(ctx));
     }
 
     private void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest req, ByteBuf content, String contentType) {
@@ -161,40 +171,84 @@ public class WebSocketServerInboundHandler extends SimpleChannelInboundHandler<O
         try {
             final JsonParser parser = jsonMapper.getFactory().createParser(request);
             jsonRequest = parser.readValueAsTree();
-            TextNode type = (TextNode)jsonRequest.get("r");
-            requestType = ClientRequest.Type.valueOf(type.textValue());
+            requestType = ClientRequest.Type.valueOf(readTextValue(jsonRequest, "r"));
         } catch (Exception e) {
             logger.info("parsing JSON failed for '" + request + "'");
             // TODO return error to client
             return;
         }
 
-        if (requestType == ClientRequest.Type.i) {
-            // client requested initial data
-            
-            // sending connection string info
-            final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
-            writeClientMessage(ctx, handshakeInfo);
+        if (requestType == null) {
+            logger.info("parsing JSON failed, no 'r' field");
+            return;
+        }
 
-            // sending initial znodes
-            try {
-                zkStateObserver.initialTree("/", 6, Sets.<ZkStateListener>newHashSet(new OutboundConnector(ctx)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else if (requestType == ClientRequest.Type.b) {
-            final String znode;
-            try {
-                znode = ((TextNode)jsonRequest.get("z")).textValue();
-            } catch (Exception e) {
-                return; // TODO return error
-            }
+        switch(requestType) {
+            case i:
+                retrieveInitialData(ctx);
+                break;
+            case b:
+                retrieveNodesData(ctx, jsonRequest);
+                break;
+            case u:
+                String znode = readTextValue(jsonRequest, "z");
+                String data = readTextValue(jsonRequest, "d");
+                setNodeData(znode, data);
+                break;
+            default:
+                System.out.println("unknown, unhandled client request = " + request);
+        }
+    }
+
+    private void setNodeData(String znode, String data) {
+        try {
+            zkStateObserver.getZk().create(znode, data.getBytes(), null, CreateMode.PERSISTENT);
+            return;
+        } catch (Throwable e) {
+            logger.warning("failed to create new node '" + znode + "': " + e.getMessage());
+        }
+        try {
             final DataMessage dataMessage = zkStateObserver.retrieveNodeData(znode);
-            if (dataMessage != null) {
-                writeClientMessage(ctx, dataMessage);
-            }
-        } else {
-            System.out.println("unknown, unhandled client request = " + request);
+            zkStateObserver.getZk().setData(znode, data.getBytes(), dataMessage.getStat().getVersion());
+        } catch (Throwable e) {
+            logger.warning("failed to update data for " + znode);
+        }
+    }
+
+    private String readTextValue(TreeNode jsonRequest, final String node) {
+        TextNode type = (TextNode)jsonRequest.get(node);
+        if (type == null) return null;
+        String value = type.textValue();
+        return value;
+    }
+
+    private void retrieveNodesData(ChannelHandlerContext ctx, TreeNode jsonRequest) {
+        final String znode;
+        try {
+            znode = ((TextNode)jsonRequest.get("z")).textValue();
+        } catch (Exception e) {
+            return; // TODO return error
+        }
+        final DataMessage dataMessage = zkStateObserver.retrieveNodeData(znode);
+        if (dataMessage != null) {
+            writeClientMessage(ctx, dataMessage);
+        }
+    }
+
+    private void retrieveInitialData(ChannelHandlerContext ctx) {
+        // client requested initial data
+
+        // sending connection string info
+        final ControlMessage handshakeInfo = new ControlMessage(zkStateObserver.getZkConnection(), ControlMessage.Type.H);
+        writeClientMessage(ctx, handshakeInfo);
+        final ControlMessage zkInfo = new ControlMessage(zkStateObserver.getStatus(), ControlMessage.Type.Z);
+        writeClientMessage(ctx, zkInfo);
+
+        // sending initial znodes
+        try {
+            zkStateObserver.initialTree("/", 6, Sets.<ZkStateListener>newHashSet(new OutboundConnector(ctx)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

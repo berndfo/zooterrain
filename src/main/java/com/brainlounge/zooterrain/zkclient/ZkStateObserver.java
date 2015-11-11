@@ -30,14 +30,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  */
 public class ZkStateObserver implements Watcher {
+
+    private static final Logger logger = Logger.getLogger(ZkStateObserver.class.getName());
+
     private String zkConnection;
     protected ZooKeeper zk;
     protected Set<ZkStateListener> listeners = new HashSet<ZkStateListener>();
-    protected final Map<String, ZNodeState> znodeStateCache = new HashMap<String, ZNodeState>(); 
+    protected final Map<String, ZNodeState> znodeStateCache = new HashMap<String, ZNodeState>();
+
+    protected AtomicReference<String> status = new AtomicReference<String>("unknown");
 
     public ZkStateObserver(String zkConnection) {
         this.zkConnection = zkConnection;
@@ -45,6 +52,14 @@ public class ZkStateObserver implements Watcher {
 
     public String getZkConnection() {
         return zkConnection;
+    }
+
+    public ZooKeeper getZk() {
+        return zk;
+    }
+
+    public String getStatus() {
+        return status.get();
     }
 
     public void addListener(ZkStateListener listener) {
@@ -142,6 +157,10 @@ public class ZkStateObserver implements Watcher {
             switch (event.getType()) {
     
                 case None:
+                    final Event.KeeperState state = event.getState();
+                    logger.info("new ZK connection state: " + state.toString());
+                    status.set(state.toString());
+                    propagateToListeners(new ControlMessage(state.toString(), ControlMessage.Type.Z));
                     break;
                 case NodeCreated:
                     //propagateToListeners(new ZNodeMessage(eventPath, ZNodeMessage.Type.C));
@@ -233,11 +252,11 @@ public class ZkStateObserver implements Watcher {
         return zNodeState;
     }
 
-    private void propagateToListeners(ZNodeMessage message) {
+    private void propagateToListeners(ClientMessage message) {
         propagateToListeners(message, listeners);
     }
     
-    private void propagateToListeners(ZNodeMessage message, Set<ZkStateListener> stateListeners) {
+    private void propagateToListeners(ClientMessage message, Set<ZkStateListener> stateListeners) {
         for (ZkStateListener listener : stateListeners) {
             listener.zkNodeEvent(message);
         }

@@ -92,11 +92,11 @@
         socket = new WebSocket("${wsLoc}");
         socket.onmessage = received;
         socket.onopen = function (event) {
-            $("#status").html("<span class='label label-success'><span class='glyphicon glyphicon-ok'></span></span>")
+            $("#status").html("<span class='label label-success'><span class='glyphicon glyphicon-ok'></span></span>");
             send("{\"r\":\"i\"}");
         };
         socket.onclose = function (event) {
-            $("#status").html("<span class='label label-danger'><span class='glyphicon glyphicon-flash'></span></span>")
+            $("#status").html("<span class='label label-danger'><span class='glyphicon glyphicon-flash'></span></span>");
             showAlert("Connection to ZooTerrain server lost.");
         };
     } else {
@@ -147,6 +147,21 @@
     function handle_controlEvent(msg) {
         if (msg.type === "H") {
             $("#conn").html(msg.msg);
+        } else if (msg.type === "Z") {
+            var zkconn = $("#zkconn");
+            zkconn.html(msg.msg);
+            zkconn.removeClass("label-info");
+            zkconn.removeClass("label-success");
+            zkconn.removeClass("label-danger");
+            zkconn.removeClass("label-default");
+            if (msg.msg === "SyncConnected") {
+                zkconn.addClass("label-success");
+            } else if (msg.msg === "Disconnected") {
+                zkconn.addClass("label-danger");
+            } else {
+                zkconn.addClass("label-default");
+            }
+            
         }
     }
 
@@ -391,6 +406,12 @@
         return true;
     }
     
+    function set_znode() {
+        var znodePath = $("#mutatenode").val();
+        var data = $("#mutatedate").val();
+        send("{\"r\":\"u\", \"z\":\""+znodePath+"\", \"d\":\""+data+"\"}");
+    }
+    
 </script>
 
 <div class="container">
@@ -401,15 +422,32 @@
       <div class="row">
         <div class="span10">
             <div class="well">
-                ZK Connection <span id="conn"></span>  
-                <span id="status">
-                    <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
-                </span>
+                <div> Browser -> ZooTerrain   
+                    <span id="status">
+                        <span class='label label-default'><span class='glyphicon glyphicon-road'></span></span>
+                    </span>
+                </div>
+                <div> ZooTerrain -> Zookeeper <span id="conn" class="label label-info"></span> <span id="zkconn" class="label label-info"></span>  
+                </div>
             </div>
 
             <div id="alert_cont">
             </div>
             <div id="data_dump">
+            </div>
+
+            <div class="well" >
+                <div class="row">
+                    <div class="col-xs-6">
+                        <input id="mutatenode" type="text" class="form-control" placeholder="znode path">
+                    </div>
+                    <div class="col-xs-5">
+                        <input id="mutatedate" type="text" class="form-control" placeholder="data string">
+                    </div>
+                    <div class="col-xs-1">
+                        <button class="btn btn-default" type="button" onclick="set_znode();">Set</button>
+                    </div>
+                </div>
             </div>
             
             <div>

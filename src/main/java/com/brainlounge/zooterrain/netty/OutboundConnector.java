@@ -17,7 +17,7 @@
 */
 package com.brainlounge.zooterrain.netty;
 
-import com.brainlounge.zooterrain.zkclient.ZNodeMessage;
+import com.brainlounge.zooterrain.zkclient.ClientMessage;
 import com.brainlounge.zooterrain.zkclient.ZkStateListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -32,7 +32,7 @@ public class OutboundConnector implements ZkStateListener {
     }
 
     @Override
-    public void zkNodeEvent(ZNodeMessage message) {
+    public void zkNodeEvent(ClientMessage message) {
         try {
             context.channel().writeAndFlush(new TextWebSocketFrame(message.toJson()), context.newPromise());
         } catch (Throwable e) {

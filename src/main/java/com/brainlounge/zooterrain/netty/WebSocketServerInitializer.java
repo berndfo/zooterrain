@@ -27,7 +27,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
 
     protected ZkStateObserver zkStateObserver;
-
+    
     public WebSocketServerInitializer(ZkStateObserver zkStateObserver) {
         this.zkStateObserver = zkStateObserver;
     }

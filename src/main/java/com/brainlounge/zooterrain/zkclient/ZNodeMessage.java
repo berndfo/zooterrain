@@ -22,7 +22,7 @@ import org.apache.zookeeper.data.Stat;
 /**
  */
 public class ZNodeMessage extends ClientMessage {
-    public static enum Type { C, U, D }
+    public enum Type { C, U, D }
 
     protected Type type;
     protected String fqZNodeName;

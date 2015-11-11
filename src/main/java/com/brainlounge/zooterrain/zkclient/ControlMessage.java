@@ -20,7 +20,7 @@ package com.brainlounge.zooterrain.zkclient;
 /**
  */
 public class ControlMessage extends ClientMessage {
-    public static enum Type { H, I }
+    public enum Type { H, Z, I }
 
     protected Type type;
     protected String message;
