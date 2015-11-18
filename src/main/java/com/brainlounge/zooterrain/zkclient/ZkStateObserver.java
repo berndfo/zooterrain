@@ -72,6 +72,7 @@ public class ZkStateObserver implements Watcher {
 
     public void start() {
         try {
+            logger.info("trying reaching ZK at " + zkConnection);
             zk = new ZooKeeper(zkConnection, 30 * 1000, null, false);
         } catch (IOException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
@@ -159,6 +160,14 @@ public class ZkStateObserver implements Watcher {
                 case None:
                     final Event.KeeperState state = event.getState();
                     logger.info("new ZK connection state: " + state.toString());
+
+                    if (state == Event.KeeperState.Expired) {
+                        logger.info("trying to reestablished expired connection");
+                        stop();
+                        start();
+                        return;
+                    }
+                    
                     status.set(state.toString());
                     propagateToListeners(new ControlMessage(state.toString(), ControlMessage.Type.Z));
                     break;
